@@ -1,0 +1,20 @@
+{
+    "ts-node": {
+        "files": true
+    },
+
+    "compilerOptions": {
+        "strict": true,
+        "strictPropertyInitialization": false,
+        "lib": ["ES2015", "ES2016", "ES2017", "ES2018", "ES2019", "ES2020", "DOM", "DOM.Iterable"],
+        "moduleResolution": "node",
+        "module": "commonjs",
+        "allowJs": true,
+        // "rootDir": "./",
+        // "outDir": "./dist",
+        "target": "es5",
+        "typeRoots": ["./types"]
+    },
+    // "include": ["index.ts"],
+    "exclude": ["node_modules", "dist"]
+}
