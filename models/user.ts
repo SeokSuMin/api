@@ -9,8 +9,8 @@ interface IUserPropety {
 }
 
 class User extends Model<IUserPropety> {
-    public userId: string;
-    public password: string;
+    public userId!: string;
+    public password?: string;
     public imgPath: string;
     public readonly createdAt: Date;
     public readonly updatedAt: Date;

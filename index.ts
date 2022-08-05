@@ -6,16 +6,20 @@ import * as cookieParser from 'cookie-parser';
 import * as expressSession from 'express-session';
 import * as dotenv from 'dotenv';
 import * as passport from 'passport';
+import passportConfig from './passport';
 import * as hpp from 'hpp';
 import helmet from 'helmet';
-
 import { sequelize } from './models';
+
+import userRouter from './routes/user';
 
 dotenv.config();
 const app = express();
 const prod: boolean = process.env.NODE_ENV === 'production';
 
-app.set('port', prod ? process.env.PORT : 3065);
+app.set('port', prod ? process.env.PORT : 3002);
+
+passportConfig();
 
 sequelize
     .sync({ force: false })
@@ -67,8 +71,10 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.get('/', (req: Request, res: Response, next: NextFunction) => {
-    res.send('react 백엔드!');
+    res.send('api server!');
 });
+
+app.use('/api/user', userRouter);
 
 app.listen(app.get('port'), () => {
     console.log(`server is ruuning on ${app.get('port')}`);

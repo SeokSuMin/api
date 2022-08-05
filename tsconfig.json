@@ -12,7 +12,7 @@
         "allowJs": true,
         // "rootDir": "./",
         // "outDir": "./dist",
-        "target": "es5",
+        "target": "es6",
         "typeRoots": ["./types"]
     },
     // "include": ["index.ts"],
