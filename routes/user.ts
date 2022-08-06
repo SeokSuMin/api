@@ -5,6 +5,7 @@ import * as multer from 'multer';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as passport from 'passport';
+import { isLoggiedIn, isNotLoggedIn } from './middleware';
 
 const router = express.Router();
 
@@ -33,7 +34,18 @@ const upload = multer({
     }),
 });
 
-router.post('/check', async (req, res, next) => {
+router.get('/', isLoggiedIn, async (req, res, next) => {
+    try {
+        const userInfo = req?.user?.toJSON() as User;
+        delete userInfo?.password;
+        return res.json(userInfo);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
+router.post('/check', isNotLoggedIn, async (req, res, next) => {
     try {
         const exUser = await User.findOne({
             where: {
@@ -50,7 +62,7 @@ router.post('/check', async (req, res, next) => {
     }
 });
 
-router.post('/profileUpload', upload.single('file'), async (req, res, next) => {
+router.post('/profileUpload', isNotLoggedIn, upload.single('file'), async (req, res, next) => {
     try {
         const userInfo = req.body;
         const hashedPassword = await bcrypt.hash(userInfo.password, 12);
@@ -68,22 +80,23 @@ router.post('/profileUpload', upload.single('file'), async (req, res, next) => {
     }
 });
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', isNotLoggedIn, async (req, res, next) => {
     passport.authenticate('local', (err: Error, user: User, info: { message: string }) => {
         if (err) {
             console.error(err);
             return next(err);
         }
         if (info) {
-            return res.status(403).end(info.message);
+            return res.status(401).end(info.message);
         }
         return req.login(user, async (loginErr: Error) => {
             try {
                 if (loginErr) {
                     return next(loginErr);
                 } else {
-                    delete user.password;
-                    return res.json(user);
+                    const objUser = user.toJSON() as User;
+                    delete objUser.password;
+                    return res.json(objUser);
                 }
             } catch (error) {
                 console.error(error);
