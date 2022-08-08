@@ -17,7 +17,7 @@ dotenv.config();
 const app = express();
 const prod: boolean = process.env.NODE_ENV === 'production';
 
-app.set('port', prod ? process.env.PORT : 3002);
+app.set('port', prod ? process.env.PORT : 3004);
 
 passportConfig();
 
@@ -74,8 +74,13 @@ app.get('/', (req: Request, res: Response, next: NextFunction) => {
     res.send('api server!');
 });
 
-app.use('/api/user', userRouter);
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    console.error(err);
+    res.status(500).send('서버 에러 발생! 서버 콘솔을 확인하세요.');
+});
 
 app.listen(app.get('port'), () => {
     console.log(`server is ruuning on ${app.get('port')}`);
 });
+
+app.use('/api/user', userRouter);

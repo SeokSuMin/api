@@ -1,5 +1,6 @@
 import * as passport from 'passport';
 import User from '../models/user';
+import github from './github';
 import local from './local';
 
 export default () => {
@@ -7,7 +8,7 @@ export default () => {
         done(null, user.userId);
     });
 
-    passport.deserializeUser<number>(async (userId, done) => {
+    passport.deserializeUser<string>(async (userId, done) => {
         try {
             const user = await User.findOne({
                 where: { userId },
@@ -21,6 +22,6 @@ export default () => {
             return done(err);
         }
     });
-
+    github();
     local();
 };

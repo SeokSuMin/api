@@ -4,14 +4,19 @@ import { sequelize } from './sequelize';
 
 interface IUserPropety {
     userId: string;
+    strategyType: string;
+    email: string;
     password: string;
     imgPath: string;
 }
 
 class User extends Model<IUserPropety> {
     public userId!: string;
+    public strategyType!: string;
+    public email?: string;
     public password?: string;
-    public imgPath: string;
+    public imgPath?: string;
+    public username?: string;
     public readonly createdAt: Date;
     public readonly updatedAt: Date;
 }
@@ -23,9 +28,18 @@ User.init(
             allowNull: false,
             primaryKey: true,
         },
-        password: {
+        strategyType: {
             type: DataTypes.TEXT,
             allowNull: false,
+            primaryKey: true,
+        },
+        email: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        password: {
+            type: DataTypes.TEXT,
+            allowNull: true,
         },
         imgPath: {
             type: DataTypes.TEXT,
