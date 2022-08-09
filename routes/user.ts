@@ -66,7 +66,7 @@ router.post('/profileUpload', isNotLoggedIn, upload.single('file'), async (req, 
     try {
         const userInfo = req.body;
         const hashedPassword = await bcrypt.hash(userInfo.password, 12);
-        const filePath = req?.file?.originalname ? `uploads/${userInfo.userId}/${req.file.originalname}` : '';
+        const filePath = req?.file?.originalname ? `${userInfo.userId}/${req.file.originalname}` : '';
         await User.create({
             userId: userInfo.userId,
             strategyType: 'local',
@@ -157,6 +157,19 @@ router.post('/change/password', isNotLoggedIn, async (req, res, next) => {
                 where: { userId: req.body.userId },
             },
         );
+        return res.send('변경완료');
+    } catch (err) {
+        console.log('err', err);
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
+router.post('/update', isLoggiedIn, upload.single('file'), async (req, res, next) => {
+    try {
+        const userInfo = req.body;
+        const hashedPassword = await bcrypt.hash(userInfo.password, 12);
+        const filePath = req?.file?.originalname ? `${userInfo.userId}/${req.file.originalname}` : '';
+
         return res.send('변경완료');
     } catch (err) {
         console.log('err', err);
