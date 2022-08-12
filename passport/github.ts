@@ -9,11 +9,13 @@ export default () => {
             {
                 clientID: process.env.GITHUB_CLIENT_ID as string,
                 clientSecret: process.env.GITHUB_CLIENT_SECRETS as string,
-                callbackURL: 'http://localhost:3004/api/user/github/callback',
+                callbackURL: 'http://localhost:3005/api/user/github/callback',
             },
             async (accessToken, refreshToken, profile, done) => {
+                console.log('profile!!', profile);
+
                 try {
-                    const { id, photos, username } = profile;
+                    const { id, photos, username, profileUrl } = profile;
                     const user = await User.findOne({
                         where: {
                             userId: id + '_' + username,
@@ -24,7 +26,7 @@ export default () => {
                         const newUser = await User.create({
                             userId: id + '_' + username,
                             strategyType: 'git',
-                            email: '',
+                            email: profileUrl,
                             imgPath: photos ? photos[0].value : '',
                             password: '',
                         });

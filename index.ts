@@ -17,7 +17,7 @@ dotenv.config();
 const app = express();
 const prod: boolean = process.env.NODE_ENV === 'production';
 
-app.set('port', prod ? process.env.PORT : 3004);
+app.set('port', prod ? process.env.PORT : 3005);
 
 passportConfig();
 

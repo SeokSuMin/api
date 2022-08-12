@@ -1,6 +1,7 @@
 import * as passport from 'passport';
 import User from '../models/user';
 import github from './github';
+import google from './google';
 import local from './local';
 
 export default () => {
@@ -23,5 +24,6 @@ export default () => {
         }
     });
     github();
+    google();
     local();
 };

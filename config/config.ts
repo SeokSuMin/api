@@ -22,6 +22,7 @@ const config: IConfigGroup = {
         database: 'postgres',
         host: 'localhost',
         dialect: 'postgres',
+        timezone: '+09:00',
     },
     test: {
         username: 'root',

@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as passport from 'passport';
 import { isLoggiedIn, isNotLoggedIn } from './middleware';
+import { sequelize } from '../models';
 
 const router = express.Router();
 
@@ -110,7 +111,11 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
 
 router.get('/github/login', isNotLoggedIn, passport.authenticate('github'));
 
-router.get('/github/callback', passport.authenticate('github', { successRedirect: 'http://localhost:3001' }));
+router.get('/github/callback', passport.authenticate('github', { successRedirect: 'http://localhost:3001', failureMessage: 'git Error' }));
+
+router.get('/google/login', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google/callback', passport.authenticate('google', { successRedirect: 'http://localhost:3001', failureMessage: 'google Error' }));
 
 router.post('/logout', isLoggiedIn, async (req, res) => {
     try {
@@ -126,11 +131,11 @@ router.post('/logout', isLoggiedIn, async (req, res) => {
     }
 });
 
-router.post('/search', isNotLoggedIn, async (req, res, next) => {
+router.get('/:search', isNotLoggedIn, async (req, res, next) => {
     try {
         const findUser = await User.findOne({
             where: {
-                email: req.body.email,
+                email: req.params.search,
             },
         });
 
@@ -146,7 +151,7 @@ router.post('/search', isNotLoggedIn, async (req, res, next) => {
     }
 });
 
-router.post('/change/password', isNotLoggedIn, async (req, res, next) => {
+router.post('/change/password', async (req, res, next) => {
     try {
         const hashedPassword = await bcrypt.hash(req.body.password, 12);
         await User.update(
@@ -164,13 +169,45 @@ router.post('/change/password', isNotLoggedIn, async (req, res, next) => {
     }
 });
 
-router.post('/update', isLoggiedIn, upload.single('file'), async (req, res, next) => {
+router.patch('/update', isLoggiedIn, upload.single('file'), async (req, res, next) => {
     try {
         const userInfo = req.body;
-        const hashedPassword = await bcrypt.hash(userInfo.password, 12);
-        const filePath = req?.file?.originalname ? `${userInfo.userId}/${req.file.originalname}` : '';
+        const filePath = req?.file?.originalname ? `${userInfo.userId}/${req.file.originalname}` : userInfo.imgPath;
+        const returnData = await User.update(
+            {
+                email: userInfo.email,
+                imgPath: filePath,
+            },
+            {
+                returning: true,
+                where: {
+                    userId: userInfo.userId,
+                },
+            },
+        );
 
-        return res.send('변경완료');
+        const newUser = returnData[1][0].toJSON() as User;
+        delete newUser.password;
+        return res.json(newUser);
+    } catch (err) {
+        console.log('err', err);
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
+router.delete('/:userId', isLoggiedIn, async (req, res, next) => {
+    try {
+        await User.destroy({
+            where: {
+                userId: req.params.userId,
+            },
+        });
+        req.logOut((err) => {
+            console.log(err);
+        });
+        req.session.destroy((err) => {
+            return res.send('로그아웃 완료');
+        });
     } catch (err) {
         console.log('err', err);
         return res.status(500).send('서버 에러가 발생하였습니다.');
