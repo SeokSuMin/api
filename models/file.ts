@@ -3,65 +3,50 @@ import { dbType } from './index';
 import { sequelize } from './sequelize';
 
 interface IBolgPropety {
+    file_id: number;
     board_id: string;
-    title: string;
-    content?: string;
-    writer: string;
-    menu_categori: string;
-    categori: string;
+    name: string;
 }
 
-class Blog extends Model<IBolgPropety> {
+class BoardFile extends Model<IBolgPropety> {
+    public file_id!: number;
     public board_id!: string;
-    public title!: string;
-    public content?: string;
-    public writer!: string;
-    public menu_categori!: string;
-    public categori!: string;
+    public name!: string;
+
     public readonly createdAt: Date;
     public readonly updatedAt: Date;
 }
 
-Blog.init(
+BoardFile.init(
     {
+        file_id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            allowNull: false,
+            primaryKey: true,
+        },
         board_id: {
             type: DataTypes.TEXT,
             allowNull: false,
             primaryKey: true,
         },
-        title: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        content: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
-        writer: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        menu_categori: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        categori: {
+        name: {
             type: DataTypes.TEXT,
             allowNull: false,
         },
     },
     {
         sequelize,
-        tableName: 'blog',
+        tableName: 'board_file',
         timestamps: true,
         charset: 'utf8',
         collate: 'utf8_general_ci',
     },
 );
 export const associate = (db: dbType) => {
-    db.Blog.hasMany(db.BoardFile, { foreignKey: 'board_id', as: 'boardFiles' });
+    db.BoardFile.belongsTo(db.Blog, { foreignKey: 'board_id' });
     // db.User.belongsToMany(db.User, { through: 'Follow', as: 'Follwers', foreignKey: 'followingId' });
     // db.User.belongsToMany(db.User, { through: 'Follow', as: 'Follwings', foreignKey: 'followerId' });
 };
 
-export default Blog;
+export default BoardFile;

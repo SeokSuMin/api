@@ -6,7 +6,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as passport from 'passport';
 import { isLoggiedIn, isNotLoggedIn } from './middleware';
-import { sequelize } from '../models';
 
 const router = express.Router();
 
