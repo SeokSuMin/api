@@ -4,20 +4,18 @@ import { sequelize } from './sequelize';
 
 interface IBolgPropety {
     board_id: string;
+    categori_id: number;
     title: string;
     content?: string;
     writer: string;
-    menu_categori: string;
-    categori: string;
 }
 
 class Blog extends Model<IBolgPropety> {
     public board_id!: string;
+    public categori_id!: number;
     public title!: string;
     public content?: string;
     public writer!: string;
-    public menu_categori!: string;
-    public categori!: string;
     public readonly createdAt: Date;
     public readonly updatedAt: Date;
 }
@@ -26,6 +24,11 @@ Blog.init(
     {
         board_id: {
             type: DataTypes.TEXT,
+            allowNull: false,
+            primaryKey: true,
+        },
+        categori_id: {
+            type: DataTypes.INTEGER,
             allowNull: false,
             primaryKey: true,
         },
@@ -41,14 +44,6 @@ Blog.init(
             type: DataTypes.TEXT,
             allowNull: false,
         },
-        menu_categori: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        categori: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
     },
     {
         sequelize,
@@ -59,9 +54,9 @@ Blog.init(
     },
 );
 export const associate = (db: dbType) => {
-    db.Blog.hasMany(db.BoardFile, { foreignKey: 'board_id', as: 'boardFiles' });
-    // db.User.belongsToMany(db.User, { through: 'Follow', as: 'Follwers', foreignKey: 'followingId' });
-    // db.User.belongsToMany(db.User, { through: 'Follow', as: 'Follwings', foreignKey: 'followerId' });
+    db.Blog.hasMany(db.BoardFile, { foreignKey: 'board_id', onDelete: 'casecade', as: 'boardFiles' });
+    db.Blog.hasMany(db.BoardComment, { foreignKey: 'board_id', onDelete: 'casecade', as: 'comments' });
+    db.Blog.belongsTo(db.Categori, { foreignKey: 'categori_id', as: 'categoris' });
 };
 
 export default Blog;
