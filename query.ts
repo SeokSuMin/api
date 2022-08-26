@@ -2,14 +2,17 @@ const getCategoriMenus = () => {
     const queryString = `
         select
             a.menu_name,
+            a.sort,
             array_agg(a.categoris) as categoris
         from (
             select
                 b.menu_name,
+                b.sort,
                 json_build_object(b.categori_name, b.total_count, 'categori_id', b.categori_id) as categoris
             from (
                 select 
                     c.categori_id,
+                    c.sort, 
                     c.menu_name,
                     c.categori_name ,
                     count(b.categori_id) as total_count
@@ -18,12 +21,16 @@ const getCategoriMenus = () => {
                 on
                     c.categori_id = b.categori_id 
                 group by
-                    c.categori_id, c.menu_name, c.categori_name
+                    c.categori_id, c.sort, c.menu_name, c.categori_name
+                order by 
+                    c.sort, c.categori_name
             ) b
-            order by b.categori_name
+            order by b.sort
         ) a
         group by
-            a.menu_name
+            a.menu_name, a.sort
+        order by 
+            sort
     `;
     return queryString;
 };
@@ -78,7 +85,7 @@ const getDdetailBoardInfo = () => {
                                 'img_path', (select "imgPath" th from user_info ui where ui."userId" = c2.user_id),
                                 'createdAt',c2."createdAt"
                             ) 
-                        order by c2."createdAt" desc) as child_comment
+                        order by c2."createdAt" asc) as child_comment
                         from 
                             board_comment c2
                         where 
@@ -95,6 +102,7 @@ const getDdetailBoardInfo = () => {
                 where
                     c1.board_id = :boardId  and
                     c1.parent_id is null
+                order by c1."createdAt" asc
                 ) b
             ), boardFiles as (
                 select 
@@ -123,8 +131,8 @@ const getComments = () => {
         from(
             select 
                 c1.*,
-                u."strategyType" ,
-                u."imgPath" ,
+                u."strategyType" as strategy_type ,
+                u."imgPath" as img_path ,
                 a.child_comment
             from
                 board_comment c1 
@@ -145,7 +153,7 @@ const getComments = () => {
                             'strategy_type', (select "strategyType" th from user_info ui where ui."userId" = c2.user_id),
                             'createdAt',c2."createdAt"
                         ) 
-                    order by c2."createdAt" desc) as child_comment
+                    order by c2."createdAt" asc) as child_comment
                     from 
                         board_comment c2
                     where 
@@ -162,6 +170,7 @@ const getComments = () => {
             where
                 c1.board_id = :boardId and
                 c1.parent_id is null
+            order by c1."createdAt" asc
         ) b
         `;
     return queryString;

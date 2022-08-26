@@ -30,7 +30,7 @@ Blog.init(
         categori_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            primaryKey: true,
+            // primaryKey: true,
         },
         title: {
             type: DataTypes.TEXT,
@@ -54,8 +54,8 @@ Blog.init(
     },
 );
 export const associate = (db: dbType) => {
-    db.Blog.hasMany(db.BoardFile, { foreignKey: 'board_id', onDelete: 'casecade', as: 'boardFiles' });
-    db.Blog.hasMany(db.BoardComment, { foreignKey: 'board_id', onDelete: 'casecade', as: 'comments' });
+    db.Blog.hasMany(db.BoardFile, { foreignKey: 'board_id', as: 'board_files', onDelete: 'cascade' });
+    db.Blog.hasMany(db.BoardComment, { foreignKey: 'board_id', as: 'comments' });
     db.Blog.belongsTo(db.Categori, { foreignKey: 'categori_id', as: 'categoris' });
 };
 

@@ -2,16 +2,18 @@ import { Model, DataTypes } from 'sequelize';
 import { dbType } from './index';
 import { sequelize } from './sequelize';
 
-interface ICategoriPropety {
+export interface ICategoriPropety {
     categori_id: number;
     menu_name: string;
     categori_name?: string;
+    sort: number;
 }
 
 class Categori extends Model<ICategoriPropety> {
     public categori_id!: number;
     public menu_name!: string;
     public categori_name!: string;
+    public sort!: number;
 
     public readonly createdAt: Date;
     public readonly updatedAt: Date;
@@ -21,6 +23,7 @@ Categori.init(
     {
         categori_id: {
             type: DataTypes.INTEGER,
+            autoIncrement: true,
             allowNull: false,
             primaryKey: true,
         },
@@ -30,6 +33,11 @@ Categori.init(
         },
         categori_name: {
             type: DataTypes.TEXT,
+            defaultValue: '기본 카테고리',
+            allowNull: false,
+        },
+        sort: {
+            type: DataTypes.INTEGER,
             allowNull: false,
         },
     },

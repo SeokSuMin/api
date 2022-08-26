@@ -50,7 +50,7 @@ router.get<{ offset: number; limit: number; categoriId: number }>('/:offset/:lim
             include: [
                 {
                     model: BoardFile,
-                    as: 'boardFiles',
+                    as: 'board_files',
                 },
                 {
                     model: Categori,
@@ -65,15 +65,13 @@ router.get<{ offset: number; limit: number; categoriId: number }>('/:offset/:lim
             order: [
                 ['createdAt', 'desc'],
                 ['board_id', 'asc'],
-                [{ model: BoardFile, as: 'boardFiles' }, 'file_id', 'asc'],
+                [{ model: BoardFile, as: 'board_files' }, 'file_id', 'asc'],
             ],
             offset: req.params.offset,
             limit: req.params.limit,
         });
 
         const totalCount = await Blog.count({ ...whereObj });
-
-        console.log(boardList);
 
         return res.json({ boardList, totalCount });
     } catch (err) {
@@ -97,11 +95,12 @@ router.get('/categori', async (req, res, next) => {
     }
 });
 
-router.post('/insert', isLoggiedIn, async (req, res, next) => {
+router.post('/board/insert', isLoggiedIn, async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
         const boardData = req.body.boardData;
         const fileNames = req.body.fileNames;
+        const deleteFileIds = req.body.deleteFileIds;
 
         await Blog.upsert(
             {
@@ -109,18 +108,28 @@ router.post('/insert', isLoggiedIn, async (req, res, next) => {
                 categori_id: boardData.categori_id,
                 title: boardData.title,
                 content: boardData.content,
-                writer: 'shark',
+                writer: 'iceMan',
             },
             {
                 fields: ['title', 'categori_id', 'content', 'writer'],
                 transaction: t,
             },
         );
+        if (fileNames.length) {
+            await BoardFile.bulkCreate(fileNames, {
+                updateOnDuplicate: ['board_id', 'name'],
+                transaction: t,
+            });
+        }
 
-        await BoardFile.bulkCreate(fileNames, {
-            updateOnDuplicate: ['board_id', 'name'],
-            transaction: t,
-        });
+        if (deleteFileIds.length) {
+            await BoardFile.destroy({
+                where: {
+                    file_id: deleteFileIds,
+                },
+                transaction: t,
+            });
+        }
 
         await t.commit();
         return res.send('ok');
@@ -164,12 +173,9 @@ router.get<{ boardId: string; categoriId: number }>('/:boardId/:categoriId', asy
     }
 });
 
-router.post('/insert/comment', isLoggiedIn, async (req, res, next) => {
+router.post('/comment/insert', isLoggiedIn, async (req, res, next) => {
     try {
         const commentData = req.body;
-
-        console.log(commentData);
-
         await BoardComment.upsert(
             {
                 comment_id: commentData.comment_id,
@@ -191,8 +197,65 @@ router.post('/insert/comment', isLoggiedIn, async (req, res, next) => {
             },
             type: QueryTypes.SELECT,
         });
-
         return res.json(newCommentData[0]);
+    } catch (err) {
+        console.log('err', err);
+
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
+router.delete('/board/:boardId', isLoggiedIn, async (req, res, next) => {
+    try {
+        const boardId = req.params.boardId;
+        const result = await Blog.destroy({
+            where: {
+                board_id: boardId,
+            },
+        });
+        return res.send('삭제완료');
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
+router.delete('/comment/:commentId', isLoggiedIn, async (req, res, next) => {
+    try {
+        const commentId = req.params.commentId;
+        const result = await BoardComment.destroy({
+            where: {
+                [Op.or]: [{ comment_id: commentId }, { parent_id: commentId }],
+            },
+        });
+        return res.send('삭제완료');
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
+router.patch('/categori/update', isLoggiedIn, async (req, res, next) => {
+    try {
+        const categoriData = req.body;
+        const modifyType = categoriData.updateData[0].categori_name;
+        await Categori.bulkCreate(categoriData.updateData, {
+            updateOnDuplicate: modifyType ? ['categori_id', 'menu_name', 'sort', 'categori_name'] : ['categori_id', 'menu_name', 'sort'],
+        });
+
+        if (categoriData.deleteMenuIds.length) {
+            await Categori.destroy({
+                where: {
+                    categori_id: categoriData.deleteMenuIds,
+                },
+            });
+        }
+
+        const categoriMenus = await sequelize.query(getCategoriMenus(), {
+            type: QueryTypes.SELECT,
+        });
+        const totalCount = await Blog.count();
+        return res.json({ categoriMenus, totalCount });
     } catch (err) {
         console.log('err', err);
 
