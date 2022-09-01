@@ -130,11 +130,12 @@ router.post('/logout', isLoggiedIn, async (req, res) => {
     }
 });
 
-router.get('/:search', isNotLoggedIn, async (req, res, next) => {
+router.get('/:email', async (req, res, next) => {
     try {
+        console.log(req.params.email);
         const findUser = await User.findOne({
             where: {
-                email: req.params.search,
+                email: req.params.email,
             },
         });
 
