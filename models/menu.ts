@@ -2,39 +2,31 @@ import { Model, DataTypes } from 'sequelize';
 import { dbType } from './index';
 import { sequelize } from './sequelize';
 
-export interface ICategoriPropety {
-    categori_id: number;
+export interface IMenuPropety {
     menu_id: number;
-    categori_name?: string;
+    menu_name: string;
     sort: number;
 }
 
-class Categori extends Model<ICategoriPropety> {
-    public categori_id!: number;
+class Menu extends Model<IMenuPropety> {
     public menu_id!: number;
-    public categori_name!: string;
+    public menu_name!: string;
     public sort!: number;
 
     public readonly createdAt: Date;
     public readonly updatedAt: Date;
 }
 
-Categori.init(
+Menu.init(
     {
-        categori_id: {
+        menu_id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
             allowNull: false,
             primaryKey: true,
         },
-        menu_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            primaryKey: true,
-        },
-        categori_name: {
+        menu_name: {
             type: DataTypes.TEXT,
-            defaultValue: '기본 카테고리',
             allowNull: false,
         },
         sort: {
@@ -44,17 +36,16 @@ Categori.init(
     },
     {
         sequelize,
-        tableName: 'categori',
+        tableName: 'menu',
         timestamps: true,
         charset: 'utf8',
         collate: 'utf8_general_ci',
     },
 );
 export const associate = (db: dbType) => {
-    db.Categori.hasMany(db.Blog, { foreignKey: 'categori_id' });
-    db.Categori.belongsTo(db.Menu, { foreignKey: 'menu_id' });
+    db.Menu.hasMany(db.Categori, { foreignKey: 'menu_id', as: 'categoris', onDelete: 'cascade' });
     // db.User.belongsToMany(db.User, { through: 'Follow', as: 'Follwers', foreignKey: 'followingId' });
     // db.User.belongsToMany(db.User, { through: 'Follow', as: 'Follwings', foreignKey: 'followerId' });
 };
 
-export default Categori;
+export default Menu;

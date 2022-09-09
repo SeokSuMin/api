@@ -172,11 +172,12 @@ router.post('/change/password', async (req, res, next) => {
 router.patch('/update', isLoggiedIn, upload.single('file'), async (req, res, next) => {
     try {
         const userInfo = req.body;
-        const filePath = req?.file?.originalname ? `${userInfo.userId}/${req.file.originalname}` : userInfo.imgPath;
+
+        const imgPath = req?.file?.originalname ? `${userInfo.userId}/${req.file.originalname}` : userInfo.profileImg;
         const returnData = await User.update(
             {
                 email: userInfo.email,
-                imgPath: filePath,
+                imgPath,
             },
             {
                 returning: true,

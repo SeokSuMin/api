@@ -14,7 +14,7 @@ import Categori from '../models/Categori';
 import BoardComment from '../models/comment';
 import User from '../models/user';
 import { getCategoriMenus, getComments, getDdetailBoardInfo, getPrevNextBoardId } from '../query';
-const { QueryTypes, Op } = db;
+const { QueryTypes, Op, fn } = db;
 
 const router = express.Router();
 
@@ -60,6 +60,7 @@ router.get<{ offset: number; limit: number; categoriId: number }>('/:offset/:lim
                 {
                     model: BoardComment,
                     as: 'comments',
+                    // attributes: [[fn('COUNT', 'comment_id'), 'commentCount']],
                 },
             ],
             order: [
@@ -142,6 +143,7 @@ router.post('/board/insert', isLoggiedIn, async (req, res, next) => {
 
 router.post('/uploadBoardFile', isLoggiedIn, upload.single('file'), async (req, res, next) => {
     try {
+        console.log(req.file);
         return res.send('업로드 완료');
     } catch (err) {
         console.log(err);
@@ -239,9 +241,9 @@ router.patch('/categori/update', isLoggiedIn, async (req, res, next) => {
     try {
         const categoriData = req.body;
         const modifyType = categoriData.updateData[0].categori_name;
-        await Categori.bulkCreate(categoriData.updateData, {
-            updateOnDuplicate: modifyType ? ['categori_id', 'menu_name', 'sort', 'categori_name'] : ['categori_id', 'menu_name', 'sort'],
-        });
+        // await Categori.bulkCreate(categoriData.updateData, {
+        //     updateOnDuplicate: modifyType ? ['categori_id', 'menu_name', 'sort', 'categori_name'] : ['categori_id', 'menu_name', 'sort'],
+        // });
 
         if (categoriData.deleteMenuIds.length) {
             await Categori.destroy({
