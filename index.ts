@@ -37,7 +37,7 @@ if (prod) {
     app.use(morgen('combined'));
     app.use(
         cors({
-            origin: /nodebird\.com$/,
+            origin: /tteoksang\.site$/,
             credentials: true,
         }),
     );
@@ -63,9 +63,9 @@ app.use(
         cookie: {
             httpOnly: true,
             secure: false,
-            domain: prod ? '.nodebird.com' : undefined,
+            domain: prod ? '.tteoksang.site' : undefined,
         },
-        name: 'rnbck',
+        name: 'smje',
     }),
 );
 app.use(passport.initialize());
@@ -80,9 +80,15 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     res.status(500).send('서버 에러 발생! 서버 콘솔을 확인하세요.');
 });
 
-app.listen(app.get('port'), () => {
-    console.log(`server is ruuning on ${app.get('port')}`);
-});
+if (prod) {
+    app.listen(app.get('port'), () => {
+        console.log('server is running on https://api.tteoksang.site:3005');
+    });
+} else {
+    app.listen(app.get('port'), () => {
+        console.log(`server is ruuning on ${app.get('port')}`);
+    });
+}
 
 app.use('/api/user', userRouter);
 app.use('/api/blog', blogRouter);
