@@ -1,36 +1,32 @@
 const getCategoriMenus = () => {
     const queryString = `
-        select
-            a.menu_name,
-            a.sort,
-            array_agg(a.categoris) as categoris
-        from (
-            select
-                b.menu_name,
-                b.sort,
-                json_build_object(b.categori_name, b.total_count, 'categori_id', b.categori_id) as categoris
-            from (
-                select 
-                    c.categori_id,
-                    c.sort, 
-                    c.menu_name,
-                    c.categori_name ,
-                    count(b.categori_id) as total_count
-                from 
-                    categori c left outer join blog b 
-                on
-                    c.categori_id = b.categori_id 
-                group by
-                    c.categori_id, c.sort, c.menu_name, c.categori_name
-                order by 
-                    c.sort, c.categori_name
-            ) b
-            order by b.sort
-        ) a
-        group by
-            a.menu_name, a.sort
+        select 
+            a.menu_id ,
+            a.menu_name ,
+            a.sort ,
+            array_to_json(array_agg(b order by b.sort asc)) as categoris
+        from menu a left outer join (
+            select 
+                c.categori_id,
+                c.menu_id,
+                c.sort, 
+                c.categori_name ,
+                count(b.categori_id) as total_count
+            from 
+                categori c left outer join blog b 
+            on
+                c.categori_id = b.categori_id 
+            group by
+                c.categori_id, c.menu_id, c.sort, c.categori_name
+            order by 
+                c.menu_id, c.sort
+        ) b
+        on
+            a.menu_id = b.menu_id
+        group by 
+            a.menu_id
         order by 
-            sort
+            a.sort 
     `;
     return queryString;
 };

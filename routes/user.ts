@@ -45,6 +45,22 @@ router.get('/', isLoggiedIn, async (req, res, next) => {
     }
 });
 
+router.get('/adminInfo', async (req, res, next) => {
+    try {
+        const adminUserInfo = await User.findOne({
+            where: {
+                userId: 'iceMan',
+            },
+        });
+
+        const userInfo = adminUserInfo as User;
+        return res.json({ userId: userInfo.userId, imgPath: userInfo.imgPath });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
 router.post('/check', isNotLoggedIn, async (req, res, next) => {
     try {
         const exUser = await User.findOne({

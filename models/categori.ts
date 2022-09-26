@@ -51,7 +51,7 @@ Categori.init(
     },
 );
 export const associate = (db: dbType) => {
-    db.Categori.hasMany(db.Blog, { foreignKey: 'categori_id' });
+    db.Categori.hasMany(db.Blog, { foreignKey: 'categori_id', onDelete: 'cascade' });
     db.Categori.belongsTo(db.Menu, { foreignKey: 'menu_id' });
     // db.User.belongsToMany(db.User, { through: 'Follow', as: 'Follwers', foreignKey: 'followingId' });
     // db.User.belongsToMany(db.User, { through: 'Follow', as: 'Follwings', foreignKey: 'followerId' });

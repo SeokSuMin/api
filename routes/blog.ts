@@ -14,6 +14,7 @@ import Categori from '../models/Categori';
 import BoardComment from '../models/comment';
 import User from '../models/user';
 import { getCategoriMenus, getComments, getDdetailBoardInfo, getPrevNextBoardId } from '../query';
+import Menu from '../models/menu';
 const { QueryTypes, Op, fn } = db;
 
 const router = express.Router();
@@ -23,6 +24,7 @@ const upload = multer({
     storage: multer.diskStorage({
         destination(req, file, done) {
             // 파일 저장 경로설정
+            console.log(file);
             const boardId = req.body.boardId;
             if (!fs.existsSync(`uploads/${boardId}`)) {
                 fs.mkdirSync(`uploads/${boardId}`);
@@ -31,8 +33,13 @@ const upload = multer({
         },
         filename(req, file, done) {
             const ext = path.extname(file.originalname);
-            const baseName = path.basename(file.originalname, ext);
-            done(null, baseName + ext);
+            if (file.mimetype == 'image/png' || file.mimetype == 'image/jpg' || file.mimetype == 'image/jpeg' || file.mimetype == 'image/webp') {
+                const baseName = path.basename(file.originalname, ext) + Date.now();
+                done(null, baseName + ext);
+            } else {
+                const baseName = path.basename(file.originalname, ext);
+                done(null, baseName + ext);
+            }
         },
     }),
 });
@@ -141,10 +148,14 @@ router.post('/board/insert', isLoggiedIn, async (req, res, next) => {
     }
 });
 
-router.post('/uploadBoardFile', isLoggiedIn, upload.single('file'), async (req, res, next) => {
+router.post('/uploadBoardFile', isLoggiedIn, upload.array('file'), async (req, res, next) => {
     try {
-        console.log(req.file);
-        return res.send('업로드 완료');
+        const files = req.files as Array<Express.Multer.File>;
+        const fileNames = files.map((file) => file.filename);
+
+        console.log(fileNames);
+
+        return res.json({ fileNames });
     } catch (err) {
         console.log(err);
         return res.status(500).send('서버 에러가 발생하였습니다.');
@@ -159,16 +170,20 @@ router.get<{ boardId: string; categoriId: number }>('/:boardId/:categoriId', asy
             },
             type: QueryTypes.SELECT,
         });
-        const categoriWhere = +req.params.categoriId === 0 ? '' : `where categori_id = :categoriId`;
-        const prevNextBoardIds = await sequelize.query(getPrevNextBoardId(categoriWhere), {
-            replacements: {
-                categoriId: req.params.categoriId,
-                boardId: req.params.boardId,
-            },
-            type: QueryTypes.SELECT,
-        });
 
-        return res.json({ boardInfo: boardInfo[0], prevNextBoardIds });
+        if (+req.params.categoriId !== -1) {
+            const categoriWhere = +req.params.categoriId === 0 ? '' : `where categori_id = :categoriId`;
+            const prevNextBoardIds = await sequelize.query(getPrevNextBoardId(categoriWhere), {
+                replacements: {
+                    categoriId: req.params.categoriId,
+                    boardId: req.params.boardId,
+                },
+                type: QueryTypes.SELECT,
+            });
+            return res.json({ boardInfo: boardInfo[0], prevNextBoardIds });
+        } else {
+            return res.json({ boardInfo: boardInfo[0] });
+        }
     } catch (err) {
         console.log(err);
         return res.status(500).send('서버 에러가 발생하였습니다.');
@@ -237,18 +252,51 @@ router.delete('/comment/:commentId', isLoggiedIn, async (req, res, next) => {
     }
 });
 
+router.patch('/menu/update', isLoggiedIn, async (req, res, next) => {
+    try {
+        const menuDate = req.body;
+
+        await Menu.bulkCreate(menuDate.updateData, {
+            updateOnDuplicate: ['menu_id', 'menu_name', 'sort'],
+        });
+
+        if (menuDate.deleteMenuIds.length) {
+            await Menu.destroy({
+                where: {
+                    menu_id: menuDate.deleteMenuIds,
+                },
+            });
+        }
+
+        const categoriMenus = await sequelize.query(getCategoriMenus(), {
+            type: QueryTypes.SELECT,
+        });
+        const totalCount = await Blog.count();
+        return res.json({ categoriMenus, totalCount });
+    } catch (err) {
+        console.log('err', err);
+
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
 router.patch('/categori/update', isLoggiedIn, async (req, res, next) => {
     try {
-        const categoriData = req.body;
-        const modifyType = categoriData.updateData[0].categori_name;
-        // await Categori.bulkCreate(categoriData.updateData, {
-        //     updateOnDuplicate: modifyType ? ['categori_id', 'menu_name', 'sort', 'categori_name'] : ['categori_id', 'menu_name', 'sort'],
-        // });
+        const categoriDate = req.body;
 
-        if (categoriData.deleteMenuIds.length) {
+        await Categori.bulkCreate(categoriDate.updateData, {
+            updateOnDuplicate: ['categori_id', 'menu_id', 'categori_name', 'sort'],
+        });
+
+        if (categoriDate.deleteCategoriIds.length) {
             await Categori.destroy({
                 where: {
-                    categori_id: categoriData.deleteMenuIds,
+                    categori_id: categoriDate.deleteCategoriIds,
+                },
+            });
+            await Blog.destroy({
+                where: {
+                    categori_id: categoriDate.deleteCategoriIds,
                 },
             });
         }
