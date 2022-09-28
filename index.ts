@@ -111,6 +111,11 @@ if (prod) {
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use('/', (req, res, next) => {
+    res.header('Cross-Origin-Opener-Policy', 'same-origin');
+    next();
+});
+
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     console.error(err);
     res.status(500).send('서버 에러 발생! 서버 콘솔을 확인하세요.');
