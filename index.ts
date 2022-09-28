@@ -82,7 +82,7 @@ if (prod) {
             cookie: {
                 httpOnly: true,
                 secure: false,
-                // domain: prod ? '.tteoksang.site' : undefined,
+                domain: prod ? '.tteoksang.site' : undefined,
             },
             name: 'smje',
             store: new RedisStore({ client: redisClient, prefix: 'session:' }),
@@ -97,7 +97,7 @@ if (prod) {
             cookie: {
                 httpOnly: true,
                 secure: false,
-                // domain: prod ? '.tteoksang.site' : undefined,
+                domain: prod ? '.tteoksang.site' : undefined,
             },
             name: 'smje',
         }),
