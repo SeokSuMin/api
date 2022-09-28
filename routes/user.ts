@@ -13,7 +13,7 @@ dotenv.config();
 
 const clientUrl =
     process.env.NODE_ENV === 'production'
-        ? process.env.PRODUCTION_SERVER_URL?.replace('.api', '')
+        ? process.env.PRODUCTION_SERVER_URL?.replace('api.', '')
         : 'http://localhost:3004';
 
 try {
