@@ -17,7 +17,6 @@ export default () => {
                 callbackURL: `${serverUrl}/api/user/github/callback`,
             },
             async (accessToken, refreshToken, profile, done) => {
-                console.log('serverUrl!!', serverUrl);
                 try {
                     const { id, photos, username, profileUrl } = profile;
                     const user = await User.findOne({

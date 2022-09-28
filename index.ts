@@ -35,7 +35,7 @@ redisClient.on('error', (err) => {
 redisClient.connect().then(); // redis v4 연결 (비동기)
 const redisCli = redisClient.v4;
 
-app.set('port', prod ? process.env.PORT : 3005);
+app.set('port', 3005);
 
 passportConfig();
 
