@@ -10,7 +10,7 @@ import Blog from '../models/blog';
 import db from '../models/sequelize';
 import { sequelize } from '../models/sequelize';
 import BoardFile from '../models/file';
-import Categori from '../models/Categori';
+import Categori from '../models/categori';
 import BoardComment from '../models/comment';
 import User from '../models/user';
 import { getCategoriMenus, getComments, getDdetailBoardInfo, getPrevNextBoardId } from '../query';
@@ -33,7 +33,12 @@ const upload = multer({
         },
         filename(req, file, done) {
             const ext = path.extname(file.originalname);
-            if (file.mimetype == 'image/png' || file.mimetype == 'image/jpg' || file.mimetype == 'image/jpeg' || file.mimetype == 'image/webp') {
+            if (
+                file.mimetype == 'image/png' ||
+                file.mimetype == 'image/jpg' ||
+                file.mimetype == 'image/jpeg' ||
+                file.mimetype == 'image/webp'
+            ) {
                 const baseName = path.basename(file.originalname, ext) + Date.now();
                 done(null, baseName + ext);
             } else {
@@ -44,49 +49,52 @@ const upload = multer({
     }),
 });
 
-router.get<{ offset: number; limit: number; categoriId: number }>('/:offset/:limit/:categoriId', async (req, res, next) => {
-    try {
-        const whereObj = {} as any;
-        if (+req.params.categoriId !== 0) {
-            whereObj.where = {
-                categori_id: +req.params.categoriId,
-            };
+router.get<{ offset: number; limit: number; categoriId: number }>(
+    '/:offset/:limit/:categoriId',
+    async (req, res, next) => {
+        try {
+            const whereObj = {} as any;
+            if (+req.params.categoriId !== 0) {
+                whereObj.where = {
+                    categori_id: +req.params.categoriId,
+                };
+            }
+            const boardList = await Blog.findAll({
+                ...whereObj,
+                include: [
+                    {
+                        model: BoardFile,
+                        as: 'board_files',
+                    },
+                    {
+                        model: Categori,
+                        as: 'categoris',
+                        attributes: ['categori_name'],
+                    },
+                    {
+                        model: BoardComment,
+                        as: 'comments',
+                        // attributes: [[fn('COUNT', 'comment_id'), 'commentCount']],
+                    },
+                ],
+                order: [
+                    ['createdAt', 'desc'],
+                    ['board_id', 'asc'],
+                    [{ model: BoardFile, as: 'board_files' }, 'file_id', 'asc'],
+                ],
+                offset: req.params.offset,
+                limit: req.params.limit,
+            });
+
+            const totalCount = await Blog.count({ ...whereObj });
+
+            return res.json({ boardList, totalCount });
+        } catch (err) {
+            console.log(err);
+            return res.status(500).send('서버 에러가 발생하였습니다.');
         }
-        const boardList = await Blog.findAll({
-            ...whereObj,
-            include: [
-                {
-                    model: BoardFile,
-                    as: 'board_files',
-                },
-                {
-                    model: Categori,
-                    as: 'categoris',
-                    attributes: ['categori_name'],
-                },
-                {
-                    model: BoardComment,
-                    as: 'comments',
-                    // attributes: [[fn('COUNT', 'comment_id'), 'commentCount']],
-                },
-            ],
-            order: [
-                ['createdAt', 'desc'],
-                ['board_id', 'asc'],
-                [{ model: BoardFile, as: 'board_files' }, 'file_id', 'asc'],
-            ],
-            offset: req.params.offset,
-            limit: req.params.limit,
-        });
-
-        const totalCount = await Blog.count({ ...whereObj });
-
-        return res.json({ boardList, totalCount });
-    } catch (err) {
-        console.log(err);
-        return res.status(500).send('서버 에러가 발생하였습니다.');
-    }
-});
+    },
+);
 
 router.get('/categori', async (req, res, next) => {
     try {
