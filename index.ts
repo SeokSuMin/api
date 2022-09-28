@@ -50,7 +50,11 @@ sequelize
 
 if (prod) {
     app.use(hpp());
-    app.use(helmet());
+    app.use(
+        helmet({
+            crossOriginEmbedderPolicy: false,
+        }),
+    );
     app.use(morgen('combined'));
     app.use(
         cors({
