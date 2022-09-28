@@ -1,17 +1,11 @@
 import * as passport from 'passport';
 import * as GoogleStrategy from 'passport-google-oauth20';
 import User from '../models/user';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
-interface IGoogoleProfile {
-    sub: string;
-    name: string;
-    given_name: string;
-    family_name: string;
-    picture: string;
-    email: string;
-    email_verified: boolean;
-    locale: string;
-}
+const serverUrl =
+    process.env.NODE_ENV === 'production' ? process.env.PRODUCTION_SERVER_URL : process.env.DEVELOPMENT_SERVER_URL;
 
 export default () => {
     passport.use(
@@ -19,7 +13,7 @@ export default () => {
             {
                 clientID: process.env.GOOGLE_CLIENT_ID as string,
                 clientSecret: process.env.GOOGLE_CLIENT_SECRETS as string,
-                callbackURL: 'http://localhost:3005/api/user/google/callback',
+                callbackURL: `${serverUrl}/api/user/google/callback`,
             },
             async (accessToken, refreshToken, profile, done) => {
                 const { sub: id, name, picture, email } = profile._json;

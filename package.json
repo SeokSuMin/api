@@ -2,8 +2,9 @@
     "name": "api-server",
     "version": "1.0.0",
     "description": "",
-    "main": "index.js",
+    "main": "index.ts",
     "devDependencies": {
+        "@types/connect-redis": "^0.0.18",
         "@types/express": "^4.17.13",
         "@types/multer": "^1.4.7",
         "@types/node": "^17.0.43",
@@ -23,7 +24,7 @@
     "scripts": {
         "dev": "nodemon",
         "prestart": "tsc",
-        "start": "node index.js"
+        "start": "cross-env NODE_ENV=production node index.js"
     },
     "author": "",
     "license": "ISC",
@@ -39,8 +40,10 @@
         "axios": "^0.27.2",
         "bcrypt": "^5.0.1",
         "chart.js": "^3.8.0",
+        "connect-redis": "^6.1.3",
         "cookie-parser": "^1.4.6",
         "cors": "^2.8.5",
+        "cross-env": "^7.0.3",
         "dotenv": "^16.0.1",
         "express": "^4.18.1",
         "express-session": "^1.17.3",
@@ -49,12 +52,14 @@
         "iconv-lite": "^0.6.3",
         "morgan": "^1.10.0",
         "multer": "^1.4.2",
+        "mysql2": "^2.3.3",
         "passport": "^0.5.2",
         "passport-github": "^1.1.0",
         "passport-google-oauth20": "^2.0.0",
         "passport-local": "^1.0.0",
         "pg": "^8.7.3",
         "pg-hstore": "^2.3.4",
+        "redis": "^4.3.1",
         "sequelize": "^6.11.0",
         "sequelize-cli": "^6.4.1"
     }

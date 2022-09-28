@@ -6,6 +6,8 @@ import * as cookieParser from 'cookie-parser';
 import * as expressSession from 'express-session';
 import * as dotenv from 'dotenv';
 import * as passport from 'passport';
+import * as redis from 'redis';
+import * as connectRedis from 'connect-redis';
 import passportConfig from './passport';
 import * as hpp from 'hpp';
 import helmet from 'helmet';
@@ -13,10 +15,25 @@ import { sequelize } from './models';
 
 import userRouter from './routes/user';
 import blogRouter from './routes/blog';
+const RedisStore = connectRedis(expressSession);
 
 dotenv.config();
 const app = express();
 const prod: boolean = process.env.NODE_ENV === 'production';
+
+const redisClient = redis.createClient({
+    url: `redis://${process.env.REDIS_USERNAME}:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}/0`,
+    legacyMode: true, // 반드시 설정 !! 설정 안하면 connect-redis 동작 안함
+});
+
+redisClient.on('connect', () => {
+    console.info('Redis connected!');
+});
+redisClient.on('error', (err) => {
+    console.error('Redis Client Error', err);
+});
+redisClient.connect().then(); // redis v4 연결 (비동기)
+const redisCli = redisClient.v4;
 
 app.set('port', prod ? process.env.PORT : 3005);
 
@@ -55,25 +72,40 @@ app.use('/', express.static('uploads'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECERET));
-app.use(
-    expressSession({
-        resave: false,
-        saveUninitialized: false,
-        secret: process.env.COOKIE_SECERET as string,
-        cookie: {
-            httpOnly: true,
-            secure: false,
-            domain: prod ? '.tteoksang.site' : undefined,
-        },
-        name: 'smje',
-    }),
-);
+
+if (prod) {
+    app.use(
+        expressSession({
+            resave: false,
+            saveUninitialized: false,
+            secret: process.env.COOKIE_SECERET as string,
+            cookie: {
+                httpOnly: true,
+                secure: false,
+                // domain: prod ? '.tteoksang.site' : undefined,
+            },
+            name: 'smje',
+            store: new RedisStore({ client: redisClient as redis.RedisClientType, prefix: 'session:' }),
+        }),
+    );
+} else {
+    app.use(
+        expressSession({
+            resave: false,
+            saveUninitialized: false,
+            secret: process.env.COOKIE_SECERET as string,
+            cookie: {
+                httpOnly: true,
+                secure: false,
+                // domain: prod ? '.tteoksang.site' : undefined,
+            },
+            name: 'smje',
+        }),
+    );
+}
+
 app.use(passport.initialize());
 app.use(passport.session());
-
-app.get('/', (req: Request, res: Response, next: NextFunction) => {
-    res.send('api server!');
-});
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     console.error(err);

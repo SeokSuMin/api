@@ -8,9 +8,9 @@ services:
         container_name: 'api'
         restart: unless-stopped
         ports:
-            - '3002:3002'
+            - '3005:3005'
         volumes:
-            - /app/node_modules
+            - /api/node_modules
             - ./:/app
         environment:
             - TZ=Asia/Seoul

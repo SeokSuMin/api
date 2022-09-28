@@ -2,6 +2,11 @@ import * as passport from 'passport';
 import * as GithubStrategy from 'passport-github';
 import { Error } from 'sequelize/types';
 import User from '../models/user';
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+const serverUrl =
+    process.env.NODE_ENV === 'production' ? process.env.PRODUCTION_SERVER_URL : process.env.DEVELOPMENT_SERVER_URL;
 
 export default () => {
     passport.use(
@@ -9,11 +14,10 @@ export default () => {
             {
                 clientID: process.env.GITHUB_CLIENT_ID as string,
                 clientSecret: process.env.GITHUB_CLIENT_SECRETS as string,
-                callbackURL: 'http://localhost:3005/api/user/github/callback',
+                callbackURL: `${serverUrl}/api/user/github/callback`,
             },
             async (accessToken, refreshToken, profile, done) => {
-                console.log('profile!!', profile);
-
+                console.log('serverUrl!!', serverUrl);
                 try {
                     const { id, photos, username, profileUrl } = profile;
                     const user = await User.findOne({

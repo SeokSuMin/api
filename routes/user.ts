@@ -8,6 +8,13 @@ import * as passport from 'passport';
 import { isLoggiedIn, isNotLoggedIn } from './middleware';
 
 const router = express.Router();
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+const clientUrl =
+    process.env.NODE_ENV === 'production'
+        ? process.env.PRODUCTION_SERVER_URL?.replace('.api', '')
+        : 'http://localhost:3004';
 
 try {
     fs.accessSync(`uploads`);
@@ -126,11 +133,17 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
 
 router.get('/github/login', isNotLoggedIn, passport.authenticate('github'));
 
-router.get('/github/callback', passport.authenticate('github', { successRedirect: 'http://localhost:3001', failureMessage: 'git Error' }));
+router.get(
+    '/github/callback',
+    passport.authenticate('github', { successRedirect: `${clientUrl}`, failureMessage: 'git Error' }),
+);
 
 router.get('/google/login', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-router.get('/google/callback', passport.authenticate('google', { successRedirect: 'http://localhost:3001', failureMessage: 'google Error' }));
+router.get(
+    '/google/callback',
+    passport.authenticate('google', { successRedirect: `${clientUrl}`, failureMessage: 'google Error' }),
+);
 
 router.post('/logout', isLoggiedIn, async (req, res) => {
     try {

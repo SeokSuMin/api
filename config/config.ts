@@ -32,11 +32,12 @@ const config: IConfigGroup = {
         dialect: 'mysql',
     },
     production: {
-        username: 'root',
-        password: 'null',
-        database: 'database_production',
-        host: '127.0.0.1',
-        dialect: 'mysql',
+        username: 'postgres',
+        password: String(process.env.DB_PASSWORD),
+        database: 'postgres',
+        host: String(process.env.DB_HOST),
+        dialect: 'postgres',
+        timezone: '+09:00',
     },
 };
 
