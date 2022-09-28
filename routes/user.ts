@@ -135,14 +135,14 @@ router.get('/github/login', isNotLoggedIn, passport.authenticate('github'));
 
 router.get(
     '/github/callback',
-    passport.authenticate('github', { successRedirect: `${clientUrl}`, failureMessage: 'git Error' }),
+    passport.authenticate('github', { successRedirect: `https://tteoksang.site`, failureMessage: 'git Error' }),
 );
 
 router.get('/google/login', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get(
     '/google/callback',
-    passport.authenticate('google', { successRedirect: `${clientUrl}`, failureMessage: 'google Error' }),
+    passport.authenticate('google', { successRedirect: `https://tteoksang.site`, failureMessage: 'google Error' }),
 );
 
 router.post('/logout', isLoggiedIn, async (req, res) => {

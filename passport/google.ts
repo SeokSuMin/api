@@ -13,7 +13,7 @@ export default () => {
             {
                 clientID: process.env.GOOGLE_CLIENT_ID as string,
                 clientSecret: process.env.GOOGLE_CLIENT_SECRETS as string,
-                callbackURL: `${serverUrl}/api/user/google/callback`,
+                callbackURL: `${process.env.PRODUCTION_SERVER_URL}/api/user/google/callback`,
             },
             async (accessToken, refreshToken, profile, done) => {
                 const { sub: id, name, picture, email } = profile._json;

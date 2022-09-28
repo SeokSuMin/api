@@ -14,7 +14,7 @@ export default () => {
             {
                 clientID: process.env.GITHUB_CLIENT_ID as string,
                 clientSecret: process.env.GITHUB_CLIENT_SECRETS as string,
-                callbackURL: `${serverUrl}/api/user/github/callback`,
+                callbackURL: `${process.env.PRODUCTION_SERVER_URL}/api/user/github/callback`,
             },
             async (accessToken, refreshToken, profile, done) => {
                 try {
