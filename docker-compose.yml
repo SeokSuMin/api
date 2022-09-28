@@ -11,6 +11,6 @@ services:
             - '3005:3005'
         volumes:
             - /api/node_modules
-            - ./:/app
+            - ./:/api
         environment:
             - TZ=Asia/Seoul
