@@ -38,6 +38,7 @@ const redisCli = redisClient.v4;
 app.set('port', 3005);
 
 passportConfig();
+app.use('/', express.static('uploads'));
 
 sequelize
     .sync({ force: false })
@@ -68,7 +69,6 @@ if (prod) {
     );
 }
 
-app.use('/', express.static('uploads'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECERET));
@@ -108,8 +108,8 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use((req, res, next) => {
-    res.header('Cross-Origin-Opener-Policy', 'cross-origin');
-    res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+    // res.header('Cross-Origin-Opener-Policy', 'cross-origin');
+    // res.header('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
 });
 
