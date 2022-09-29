@@ -108,6 +108,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use((req, res, next) => {
+    res.header('Cross-Origin-Opener-Policy', 'cross-origin');
     res.header('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
 });
