@@ -51,7 +51,7 @@ sequelize
 
 if (prod) {
     app.use(hpp());
-    //app.use(helmet({ crossOriginEmbedderPolicy: false }));
+    app.use(helmet());
     app.use(morgen('combined'));
     app.use(
         cors({
