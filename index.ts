@@ -51,9 +51,10 @@ sequelize
 if (prod) {
     app.use(hpp());
     app.use(
-        helmet({
-            crossOriginEmbedderPolicy: false,
-        }),
+        helmet(),
+        //     {
+        //     crossOriginEmbedderPolicy: false,
+        // }
     );
     app.use(morgen('combined'));
     app.use(
@@ -112,8 +113,8 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use('/', (req, res, next) => {
-    res.header('Cross-Origin-Opener-Policy', 'same-origin');
-    next();
+    // res.header('Cross-Origin-Opener-Policy', 'same-origin');
+    // next();
 });
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
