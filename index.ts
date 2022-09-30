@@ -85,7 +85,7 @@ if (prod) {
                 domain: prod ? '.tteoksang.site' : undefined,
             },
             name: 'smje',
-            store: new RedisStore({ client: redisClient, prefix: 'session:' }),
+            // store: new RedisStore({ client: redisClient, prefix: 'session:' }),
         }),
     );
 } else {
