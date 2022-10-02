@@ -24,7 +24,7 @@ const upload = multer({
     storage: multer.diskStorage({
         destination(req, file, done) {
             // 파일 저장 경로설정
-            console.log(file);
+            // console.log(file);
             const boardId = req.body.boardId;
             if (!fs.existsSync(`uploads/${boardId}`)) {
                 fs.mkdirSync(`uploads/${boardId}`);

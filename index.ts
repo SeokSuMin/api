@@ -11,10 +11,12 @@ import * as connectRedis from 'connect-redis';
 import passportConfig from './passport';
 import * as hpp from 'hpp';
 import helmet from 'helmet';
+import * as nodeShedule from 'node-schedule';
 import { sequelize } from './models';
 
 import userRouter from './routes/user';
 import blogRouter from './routes/blog';
+import { deleteFolder } from './util';
 const RedisStore = connectRedis(expressSession);
 
 dotenv.config();
@@ -121,6 +123,9 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 if (prod) {
     app.listen(app.get('port'), () => {
         console.log('server is running on https://api.tteoksang.site:3005');
+        nodeShedule.scheduleJob('0 10 0 * * *', () => {
+            deleteFolder();
+        });
     });
 } else {
     app.listen(app.get('port'), () => {
