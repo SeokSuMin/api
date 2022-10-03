@@ -15,7 +15,7 @@ import BoardComment from '../models/comment';
 import User from '../models/user';
 import { getCategoriMenus, getComments, getDdetailBoardInfo, getPrevNextBoardId } from '../query';
 import Menu from '../models/menu';
-const { QueryTypes, Op, fn } = db;
+const { QueryTypes, Op, fn, literal } = db;
 
 const router = express.Router();
 
@@ -61,6 +61,20 @@ router.get<{ offset: number; limit: number; categoriId: number }>(
             }
             const boardList = await Blog.findAll({
                 ...whereObj,
+                attributes: [
+                    'board_id',
+                    'categori_id',
+                    'title',
+                    'content',
+                    'writer',
+                    'createdAt',
+                    [
+                        literal(
+                            '(select count(bc.comment_id)::integer from board_comment bc where bc.board_id = "Blog"."board_id")',
+                        ),
+                        'comment_count',
+                    ],
+                ],
                 include: [
                     {
                         model: BoardFile,
@@ -71,15 +85,15 @@ router.get<{ offset: number; limit: number; categoriId: number }>(
                         as: 'categoris',
                         attributes: ['categori_name'],
                     },
-                    {
-                        model: BoardComment,
-                        as: 'comments',
-                        // attributes: [[fn('COUNT', 'comment_id'), 'commentCount']],
-                    },
+                    // {
+                    //     model: BoardComment,
+                    //     as: 'comments',
+                    //     // attributes: [[fn('COUNT', 'comment_id'), 'commentCount']],
+                    // },
                 ],
                 order: [
                     ['createdAt', 'desc'],
-                    ['board_id', 'asc'],
+                    [literal('comment_count'), 'asc'],
                     [{ model: BoardFile, as: 'board_files' }, 'file_id', 'asc'],
                 ],
                 offset: req.params.offset,
@@ -87,7 +101,6 @@ router.get<{ offset: number; limit: number; categoriId: number }>(
             });
 
             const totalCount = await Blog.count({ ...whereObj });
-
             return res.json({ boardList, totalCount });
         } catch (err) {
             console.log(err);
