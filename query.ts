@@ -31,6 +31,38 @@ const getCategoriMenus = () => {
     return queryString;
 };
 
+const getBoardList = (offset: number, limit: number, where: string, orderCol: string, addLikeCommentQuery: string) => {
+    const queryString = `
+        select
+            a.* ,
+            (select count(bc.comment_id)::integer from board_comment bc where bc.board_id = a.board_id) as comment_count,
+            (select count(bl.like_id)::integer from blog_like bl where bl.board_id = a.board_id) as like_count
+            ${addLikeCommentQuery}
+        from (
+            select 
+                b.board_id ,
+                b.categori_id ,
+                b.title ,
+                b.content ,
+                b.writer ,
+                b."createdAt" ,
+                array_to_json(array_agg(bf order by file_id)) as board_files
+            from 
+                blog b left outer join board_file bf
+            on
+                b.board_id = bf.board_id 	
+            group by 
+                b.board_id 
+        ) a 
+        ${where} 
+        order by 
+            ${orderCol}
+        offset ${offset}
+        limit ${limit}
+    `;
+    return queryString;
+};
+
 const getPrevNextBoardId = (categoriWhere: string) => {
     const queryString = `
         select
@@ -51,7 +83,7 @@ const getPrevNextBoardId = (categoriWhere: string) => {
     return queryString;
 };
 
-const getDdetailBoardInfo = () => {
+const getDdetailBoardInfo = (addLikeQuery: string) => {
     const queryString = `
         with comments as (
             select 
@@ -111,7 +143,9 @@ const getDdetailBoardInfo = () => {
                 b.* ,
                 json_build_object('categori_name', (select categori_name from categori c where c.categori_id = b.categori_id)) as categoris ,
                 bf.board_files ,
-                c.comments
+                c.comments,
+                ${addLikeQuery}
+                (select count(like_id) from blog_like bl where bl.board_id = :boardId) as like_count
             from 
                 blog b, comments c, boardFiles bf
             where 
@@ -172,4 +206,4 @@ const getComments = () => {
     return queryString;
 };
 
-export { getCategoriMenus, getPrevNextBoardId, getDdetailBoardInfo, getComments };
+export { getCategoriMenus, getPrevNextBoardId, getDdetailBoardInfo, getComments, getBoardList };

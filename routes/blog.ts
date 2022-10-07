@@ -13,8 +13,9 @@ import BoardFile from '../models/file';
 import Categori from '../models/categori';
 import BoardComment from '../models/comment';
 import User from '../models/user';
-import { getCategoriMenus, getComments, getDdetailBoardInfo, getPrevNextBoardId } from '../query';
+import { getBoardList, getCategoriMenus, getComments, getDdetailBoardInfo, getPrevNextBoardId } from '../query';
 import Menu from '../models/menu';
+import BlogLike from '../models/blogLike';
 const { QueryTypes, Op, fn, literal } = db;
 
 const router = express.Router();
@@ -49,65 +50,63 @@ const upload = multer({
     }),
 });
 
-router.get<{ offset: number; limit: number; categoriId: number }>(
-    '/:offset/:limit/:categoriId',
-    async (req, res, next) => {
-        try {
-            const whereObj = {} as any;
-            if (+req.params.categoriId !== 0) {
-                whereObj.where = {
-                    categori_id: +req.params.categoriId,
-                };
-            }
-            const boardList = await Blog.findAll({
-                ...whereObj,
-                attributes: [
-                    'board_id',
-                    'categori_id',
-                    'title',
-                    'content',
-                    'writer',
-                    'createdAt',
-                    [
-                        literal(
-                            '(select count(bc.comment_id)::integer from board_comment bc where bc.board_id = "Blog"."board_id")',
-                        ),
-                        'comment_count',
-                    ],
-                ],
-                include: [
-                    {
-                        model: BoardFile,
-                        as: 'board_files',
-                    },
-                    {
-                        model: Categori,
-                        as: 'categoris',
-                        attributes: ['categori_name'],
-                    },
-                    // {
-                    //     model: BoardComment,
-                    //     as: 'comments',
-                    //     // attributes: [[fn('COUNT', 'comment_id'), 'commentCount']],
-                    // },
-                ],
-                order: [
-                    ['createdAt', 'desc'],
-                    [literal('comment_count'), 'asc'],
-                    [{ model: BoardFile, as: 'board_files' }, 'file_id', 'asc'],
-                ],
-                offset: req.params.offset,
-                limit: req.params.limit,
-            });
+router.post('/', async (req, res, next) => {
+    try {
+        const userId = req.user?.userId;
+        const prams = req.body;
+        const orderCol = `"${prams.order.split(' ')[0]}" ${prams.order.split(' ')[1]}`;
+        // 사용자가 로그인 상태면 좋아요, 댓글을 표시한 글을 체크하기 위한 추가쿼리
+        const addLikeCommentQuery = userId
+            ? `, (select like_id from blog_like bl where bl.board_id = a.board_id and bl.user_id = :userId) as like_id
+               , (select comment_id from board_comment bc where bc.board_id = a.board_id and bc.user_id = 'shark' limit 1) as comment_id
+            `
+            : '';
+        let where = prams.categoriId !== 0 ? 'where categori_id = :categoriId' : '';
 
-            const totalCount = await Blog.count({ ...whereObj });
-            return res.json({ boardList, totalCount });
-        } catch (err) {
-            console.log(err);
-            return res.status(500).send('서버 에러가 발생하였습니다.');
+        if (prams.where.includes('like')) {
+            const likeCondition =
+                'a.board_id in (select bl.board_id from blog_like bl where bl.board_id = a.board_id and bl.user_id = :userId)';
+            where += where ? `and ${likeCondition}` : `where ${likeCondition}`;
         }
-    },
-);
+        if (prams.where.includes('comment')) {
+            const commentCondition =
+                'a.board_id in (select bc.board_id from board_comment bc where bc.board_id = a.board_id and bc.user_id = :userId)';
+            where += where ? `and ${commentCondition}` : `where ${commentCondition}`;
+        }
+
+        const boardList = await sequelize.query(
+            getBoardList(prams.offset, prams.limit, where, orderCol, addLikeCommentQuery),
+            {
+                replacements: {
+                    categoriId: prams.categoriId,
+                    userId: userId || '',
+                },
+                type: QueryTypes.SELECT,
+            },
+        );
+
+        const totalCount: { count: number }[] = await sequelize.query(
+            `
+            select 
+                count(board_id)
+            from
+                blog 
+            ${where}
+        `,
+            {
+                replacements: {
+                    categoriId: prams.categoriId,
+                    userId: userId || '',
+                },
+                type: QueryTypes.SELECT,
+            },
+        );
+        return res.json({ boardList, totalCount: totalCount[0].count });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
 
 router.get('/categori', async (req, res, next) => {
     try {
@@ -185,9 +184,16 @@ router.post('/uploadBoardFile', isLoggiedIn, upload.array('file'), async (req, r
 
 router.get<{ boardId: string; categoriId: number }>('/:boardId/:categoriId', async (req, res, next) => {
     try {
-        const boardInfo = await sequelize.query(getDdetailBoardInfo(), {
+        const user = req.user;
+        const userId = user?.userId ? user?.userId : '';
+        // 사용자가 로그인 상태면 좋아요 체크한 글을 체크하기 위한 추가쿼리
+        const addLikeQuery = userId
+            ? `(select like_id from blog_like bl where bl.board_id = :boardId and user_id = :userId) as like_id ,`
+            : '';
+        const boardInfo = await sequelize.query(getDdetailBoardInfo(addLikeQuery), {
             replacements: {
                 boardId: req.params.boardId,
+                userId,
             },
             type: QueryTypes.SELECT,
         });
@@ -201,6 +207,7 @@ router.get<{ boardId: string; categoriId: number }>('/:boardId/:categoriId', asy
                 },
                 type: QueryTypes.SELECT,
             });
+
             return res.json({ boardInfo: boardInfo[0], prevNextBoardIds });
         } else {
             return res.json({ boardInfo: boardInfo[0] });
@@ -330,6 +337,45 @@ router.patch('/categori/update', isLoggiedIn, async (req, res, next) => {
     } catch (err) {
         console.log('err', err);
 
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
+router.post('/like/:boardId', isLoggiedIn, async (req, res, next) => {
+    try {
+        const userId = req.user?.userId as string;
+        const boardId = req.params.boardId;
+        await BlogLike.upsert(
+            {
+                like_id: null,
+                board_id: boardId,
+                user_id: userId,
+            },
+            {
+                fields: ['board_id', 'user_id'],
+            },
+        );
+        return res.status(201).send('저장성공');
+    } catch (err) {
+        console.log('err', err);
+
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
+router.delete('/like/:boardId', isLoggiedIn, async (req, res, next) => {
+    try {
+        const userId = req.user?.userId as string;
+        const boardId = req.params.boardId;
+        const result = await BlogLike.destroy({
+            where: {
+                board_id: boardId,
+                user_id: userId,
+            },
+        });
+        return res.send('삭제완료');
+    } catch (err) {
+        console.log(err);
         return res.status(500).send('서버 에러가 발생하였습니다.');
     }
 });
