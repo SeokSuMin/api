@@ -54,6 +54,7 @@ router.post('/', async (req, res, next) => {
     try {
         const userId = req.user?.userId;
         const prams = req.body;
+
         const orderCol = `"${prams.order.split(' ')[0]}" ${prams.order.split(' ')[1]}`;
         // 사용자가 로그인 상태면 좋아요, 댓글을 표시한 글을 체크하기 위한 추가쿼리
         const addLikeCommentQuery = userId
@@ -90,7 +91,7 @@ router.post('/', async (req, res, next) => {
             select 
                 count(board_id)
             from
-                blog 
+                blog a
             ${where}
         `,
             {
