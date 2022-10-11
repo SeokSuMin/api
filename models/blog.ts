@@ -57,6 +57,7 @@ export const associate = (db: dbType) => {
     db.Blog.hasMany(db.BoardFile, { foreignKey: 'board_id', as: 'board_files', onDelete: 'cascade' });
     db.Blog.hasMany(db.BoardComment, { foreignKey: 'board_id', as: 'comments', onDelete: 'cascade' });
     db.Blog.hasMany(db.BlogLike, { foreignKey: 'board_id', as: 'blog_likes', onDelete: 'cascade' });
+    db.Blog.hasMany(db.BlogFavorite, { foreignKey: 'board_id', as: 'blog_favorite', onDelete: 'cascade' });
     db.Blog.belongsTo(db.Categori, { foreignKey: 'categori_id', as: 'categoris' });
 };
 

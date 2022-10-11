@@ -63,7 +63,7 @@ const getBoardList = (offset: number, limit: number, where: string, orderCol: st
     return queryString;
 };
 
-const getPrevNextBoardId = (categoriWhere: string) => {
+const getPrevNextBoardId = (where: string, order: string) => {
     const queryString = `
         select
             *
@@ -71,11 +71,11 @@ const getPrevNextBoardId = (categoriWhere: string) => {
             select
                 board_id,
                 categori_id,
-                lag(board_id, 1) over (order by "createdAt" desc) as prev,
-                lead(board_id, 1) over (order by "createdAt" desc) as next
+                lag(board_id, 1) over (order by ${order}) as prev,
+                lead(board_id, 1) over (order by ${order}) as next
             from
-                public.blog
-            ${categoriWhere}
+                public.blog b
+            ${where}
             ) a
         where
             a.board_id = :boardId

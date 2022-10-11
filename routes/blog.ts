@@ -16,6 +16,7 @@ import User from '../models/user';
 import { getBoardList, getCategoriMenus, getComments, getDdetailBoardInfo, getPrevNextBoardId } from '../query';
 import Menu from '../models/menu';
 import BlogLike from '../models/blogLike';
+import BlogFavorite from '../models/blogFavorite';
 const { QueryTypes, Op, fn, literal } = db;
 
 const router = express.Router();
@@ -53,33 +54,40 @@ const upload = multer({
 router.post('/', async (req, res, next) => {
     try {
         const userId = req.user?.userId;
-        const prams = req.body;
-
-        const orderCol = `"${prams.order.split(' ')[0]}" ${prams.order.split(' ')[1]}`;
+        const params = req.body;
+        const defaultOrder =
+            params.order.includes('like') || params.order.includes('comment') ? `, "createdAt" desc` : '';
+        const orderCol = `"${params.order.split(' ')[0]}" ${params.order.split(' ')[1]} ${defaultOrder}`;
         // 사용자가 로그인 상태면 좋아요, 댓글을 표시한 글을 체크하기 위한 추가쿼리
         const addLikeCommentQuery = userId
             ? `, (select like_id from blog_like bl where bl.board_id = a.board_id and bl.user_id = :userId) as like_id
                , (select comment_id from board_comment bc where bc.board_id = a.board_id and bc.user_id = 'shark' limit 1) as comment_id
             `
             : '';
-        let where = prams.categoriId !== 0 ? 'where categori_id = :categoriId' : '';
+        let where = '';
+        if (params.categoriId !== '0' && params.categoriId !== 'favorite') {
+            where = 'where categori_id = :categoriId';
+        } else if (params.categoriId === 'favorite') {
+            where =
+                'where board_id in (select board_id from blog_favorite bf where bf.board_id = a.board_id and bf.user_id = :userId)';
+        }
 
-        if (prams.where.includes('like')) {
+        if (params.where.includes('like')) {
             const likeCondition =
                 'a.board_id in (select bl.board_id from blog_like bl where bl.board_id = a.board_id and bl.user_id = :userId)';
             where += where ? `and ${likeCondition}` : `where ${likeCondition}`;
         }
-        if (prams.where.includes('comment')) {
+        if (params.where.includes('comment')) {
             const commentCondition =
                 'a.board_id in (select bc.board_id from board_comment bc where bc.board_id = a.board_id and bc.user_id = :userId)';
             where += where ? `and ${commentCondition}` : `where ${commentCondition}`;
         }
 
         const boardList = await sequelize.query(
-            getBoardList(prams.offset, prams.limit, where, orderCol, addLikeCommentQuery),
+            getBoardList(params.offset, params.limit, where, orderCol, addLikeCommentQuery),
             {
                 replacements: {
-                    categoriId: prams.categoriId,
+                    categoriId: params.categoriId,
                     userId: userId || '',
                 },
                 type: QueryTypes.SELECT,
@@ -96,7 +104,7 @@ router.post('/', async (req, res, next) => {
         `,
             {
                 replacements: {
-                    categoriId: prams.categoriId,
+                    categoriId: params.categoriId,
                     userId: userId || '',
                 },
                 type: QueryTypes.SELECT,
@@ -118,6 +126,24 @@ router.get('/categori', async (req, res, next) => {
         const totalCount = await Blog.count();
 
         return res.json({ categoriMenus, totalCount });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
+router.get('/favorite', isLoggiedIn, async (req, res, next) => {
+    try {
+        const user = req.user;
+        const userId = user?.userId ? user?.userId : '';
+        const favoriteBoardList = await BlogFavorite.findAll({
+            where: {
+                user_id: userId,
+            },
+            attributes: ['board_id'],
+        });
+
+        return res.json({ favoriteBoardList });
     } catch (err) {
         console.log(err);
         return res.status(500).send('서버 에러가 발생하였습니다.');
@@ -183,41 +209,65 @@ router.post('/uploadBoardFile', isLoggiedIn, upload.array('file'), async (req, r
     }
 });
 
-router.get<{ boardId: string; categoriId: number }>('/:boardId/:categoriId', async (req, res, next) => {
-    try {
-        const user = req.user;
-        const userId = user?.userId ? user?.userId : '';
-        // 사용자가 로그인 상태면 좋아요 체크한 글을 체크하기 위한 추가쿼리
-        const addLikeQuery = userId
-            ? `(select like_id from blog_like bl where bl.board_id = :boardId and user_id = :userId) as like_id ,`
-            : '';
-        const boardInfo = await sequelize.query(getDdetailBoardInfo(addLikeQuery), {
-            replacements: {
-                boardId: req.params.boardId,
-                userId,
-            },
-            type: QueryTypes.SELECT,
-        });
-
-        if (+req.params.categoriId !== -1) {
-            const categoriWhere = +req.params.categoriId === 0 ? '' : `where categori_id = :categoriId`;
-            const prevNextBoardIds = await sequelize.query(getPrevNextBoardId(categoriWhere), {
+router.get<{ boardId: string; categoriId: string; order: string }>(
+    '/:boardId/:categoriId/:order',
+    async (req, res, next) => {
+        try {
+            const user = req.user;
+            const userId = user?.userId ? user?.userId : '';
+            // 사용자가 로그인 상태면 좋아요, 즐겨찾기 체크한 글을 체크하기 위한 추가쿼리
+            const addLikeQuery = userId
+                ? `(select like_id from blog_like bl where bl.board_id = :boardId and bl.user_id = :userId) as like_id ,
+               (select favorite_id from blog_favorite bf where bf.board_id = :boardId and bf.user_id = :userId) as favorite_id ,
+              `
+                : '';
+            const boardInfo = await sequelize.query(getDdetailBoardInfo(addLikeQuery), {
                 replacements: {
-                    categoriId: req.params.categoriId,
                     boardId: req.params.boardId,
+                    userId,
                 },
                 type: QueryTypes.SELECT,
             });
 
-            return res.json({ boardInfo: boardInfo[0], prevNextBoardIds });
-        } else {
-            return res.json({ boardInfo: boardInfo[0] });
+            // 화면에서 수정모드 이면 이전글 다음글 쿼리가 필요없음. 수정모드 -1
+            if (req.params.categoriId !== '-1') {
+                let order = '';
+                if (req.params.order.includes('like')) {
+                    order = `(select count(bl.like_id)::integer from blog_like bl where bl.board_id = b.board_id) desc, "createdAt" desc`;
+                } else if (req.params.order.includes('comment')) {
+                    order = `(select count(bc.comment_id)::integer from board_comment bc where bc.board_id = b.board_id) desc, "createdAt" desc`;
+                } else {
+                    order = `"${req.params.order.split(' ')[0]}" ${req.params.order.split(' ')[1]}`;
+                }
+
+                let where = '';
+                // 일반 카테고리인지, 즐겨찾기 글인지 체크해서 조건분기
+                if (req.params.categoriId !== '0' && req.params.categoriId !== 'favorite') {
+                    where = 'where categori_id = :categoriId';
+                } else if (req.params.categoriId === 'favorite') {
+                    where =
+                        'where board_id in (select board_id from blog_favorite bf where bf.board_id = b.board_id and bf.user_id = :userId)';
+                }
+
+                const prevNextBoardIds = await sequelize.query(getPrevNextBoardId(where, order), {
+                    replacements: {
+                        categoriId: req.params.categoriId,
+                        boardId: req.params.boardId,
+                        userId,
+                    },
+                    type: QueryTypes.SELECT,
+                });
+
+                return res.json({ boardInfo: boardInfo[0], prevNextBoardIds });
+            } else {
+                return res.json({ boardInfo: boardInfo[0] });
+            }
+        } catch (err) {
+            console.log(err);
+            return res.status(500).send('서버 에러가 발생하였습니다.');
         }
-    } catch (err) {
-        console.log(err);
-        return res.status(500).send('서버 에러가 발생하였습니다.');
-    }
-});
+    },
+);
 
 router.post('/comment/insert', isLoggiedIn, async (req, res, next) => {
     try {
@@ -369,6 +419,45 @@ router.delete('/like/:boardId', isLoggiedIn, async (req, res, next) => {
         const userId = req.user?.userId as string;
         const boardId = req.params.boardId;
         const result = await BlogLike.destroy({
+            where: {
+                board_id: boardId,
+                user_id: userId,
+            },
+        });
+        return res.send('삭제완료');
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
+router.post('/favorite/:boardId', isLoggiedIn, async (req, res, next) => {
+    try {
+        const userId = req.user?.userId as string;
+        const boardId = req.params.boardId;
+        await BlogFavorite.upsert(
+            {
+                favorite_id: null,
+                board_id: boardId,
+                user_id: userId,
+            },
+            {
+                fields: ['board_id', 'user_id'],
+            },
+        );
+        return res.status(201).send('저장성공');
+    } catch (err) {
+        console.log('err', err);
+
+        return res.status(500).send('서버 에러가 발생하였습니다.');
+    }
+});
+
+router.delete('/favorite/:boardId', isLoggiedIn, async (req, res, next) => {
+    try {
+        const userId = req.user?.userId as string;
+        const boardId = req.params.boardId;
+        const result = await BlogFavorite.destroy({
             where: {
                 board_id: boardId,
                 user_id: userId,

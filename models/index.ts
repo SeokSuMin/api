@@ -5,6 +5,7 @@ import BoardFile, { associate as associateBoardFile } from './file';
 import BoardComment, { associate as associateBoardComment } from './comment';
 import Menu, { associate as associateMenu } from './menu';
 import BlogLike, { associate as associateblogLike } from './blogLike';
+import BlogFavorite, { associate as associateblogFavorite } from './blogFavorite';
 
 const db = {
     User,
@@ -14,6 +15,7 @@ const db = {
     BoardComment,
     Menu,
     BlogLike,
+    BlogFavorite,
 };
 
 export * from './sequelize';
@@ -26,3 +28,4 @@ associateBoardFile(db);
 associateBoardComment(db);
 associateMenu(db);
 associateblogLike(db);
+associateblogFavorite(db);
