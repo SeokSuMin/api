@@ -8,6 +8,7 @@ interface IBolgPropety {
     title: string;
     content?: string;
     writer: string;
+    thumb_img_name?: string;
 }
 
 class Blog extends Model<IBolgPropety> {
@@ -16,6 +17,7 @@ class Blog extends Model<IBolgPropety> {
     public title!: string;
     public content?: string;
     public writer!: string;
+    public thumb_img_name?: string;
     public readonly createdAt: Date;
     public readonly updatedAt: Date;
 }
@@ -43,6 +45,10 @@ Blog.init(
         writer: {
             type: DataTypes.TEXT,
             allowNull: false,
+        },
+        thumb_img_name: {
+            type: DataTypes.TEXT,
+            allowNull: true,
         },
     },
     {

@@ -36,10 +36,10 @@ const upload = multer({
         filename(req, file, done) {
             const ext = path.extname(file.originalname);
             if (
-                file.mimetype == 'image/png' ||
-                file.mimetype == 'image/jpg' ||
-                file.mimetype == 'image/jpeg' ||
-                file.mimetype == 'image/webp'
+                ext.toLowerCase() === '.png' ||
+                ext.toLowerCase() === '.jpg' ||
+                ext.toLowerCase() === '.jpeg' ||
+                ext.toLowerCase() === '.webp'
             ) {
                 const baseName = path.basename(file.originalname, ext) + Date.now();
                 done(null, baseName + ext);
@@ -164,9 +164,10 @@ router.post('/board/insert', isLoggiedIn, async (req, res, next) => {
                 title: boardData.title,
                 content: boardData.content,
                 writer: 'iceMan',
+                thumb_img_name: boardData.thumb_img_name,
             },
             {
-                fields: ['title', 'categori_id', 'content', 'writer'],
+                fields: ['title', 'categori_id', 'content', 'writer', 'thumb_img_name'],
                 transaction: t,
             },
         );
@@ -199,8 +200,6 @@ router.post('/uploadBoardFile', isLoggiedIn, upload.array('file'), async (req, r
     try {
         const files = req.files as Array<Express.Multer.File>;
         const fileNames = files.map((file) => file.filename);
-
-        console.log(fileNames);
 
         return res.json({ fileNames });
     } catch (err) {

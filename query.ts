@@ -45,6 +45,7 @@ const getBoardList = (offset: number, limit: number, where: string, orderCol: st
                 b.title ,
                 b.content ,
                 b.writer ,
+                b.thumb_img_name ,
                 b."createdAt" ,
                 array_to_json(array_agg(bf order by file_id)) as board_files
             from 
@@ -71,8 +72,8 @@ const getPrevNextBoardId = (where: string, order: string) => {
             select
                 board_id,
                 categori_id,
-                lag(board_id, 1) over (order by ${order}) as prev,
-                lead(board_id, 1) over (order by ${order}) as next
+                lag(board_id, 1) over (order by ${order}) as next,
+                lead(board_id, 1) over (order by ${order}) as prev
             from
                 public.blog b
             ${where}
