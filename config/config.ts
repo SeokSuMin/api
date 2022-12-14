@@ -18,7 +18,7 @@ interface IConfigGroup {
 const config: IConfigGroup = {
     development: {
         username: 'postgres',
-        password: String(process.env.DB_PASSWORD),
+        password: '1234',
         database: 'postgres',
         host: 'localhost',
         dialect: 'postgres',
