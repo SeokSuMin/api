@@ -23,19 +23,19 @@ dotenv.config();
 const app = express();
 const prod: boolean = process.env.NODE_ENV === 'production';
 
-const redisClient = redis.createClient({
-    url: `redis://${process.env.REDIS_USERNAME}:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}/0`,
-    legacyMode: true, // 반드시 설정 !! 설정 안하면 connect-redis 동작 안함
-});
+// const redisClient = redis.createClient({
+//     url: `redis://${process.env.REDIS_USERNAME}:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}/0`,
+//     legacyMode: true, // 반드시 설정 !! 설정 안하면 connect-redis 동작 안함
+// });
 
-redisClient.on('connect', () => {
-    console.info('Redis connected!');
-});
-redisClient.on('error', (err) => {
-    console.error('Redis Client Error', err);
-});
-redisClient.connect().then(); // redis v4 연결 (비동기)
-const redisCli = redisClient.v4;
+// redisClient.on('connect', () => {
+//     console.info('Redis connected!');
+// });
+// redisClient.on('error', (err) => {
+//     console.error('Redis Client Error', err);
+// });
+// redisClient.connect().then(); // redis v4 연결 (비동기)
+// const redisCli = redisClient.v4;
 
 app.set('port', 3005);
 
