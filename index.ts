@@ -33,7 +33,7 @@ console.log('안녕하세요')
 //     url: `redis://${process.env.REDIS_USERNAME}:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}/0`,
 //     legacyMode: true, // 반드시 설정 !! 설정 안하면 connect-redis 동작 안함
 // });
-
+console.log('이게 진짜라고?')
 // redisClient.on('connect', () => {
 //     console.info('Redis connected!');
 // });
