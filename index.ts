@@ -42,7 +42,7 @@ console.log('이게 진짜라고?')
 // });
 // redisClient.connect().then(); // redis v4 연결 (비동기)
 // const redisCli = redisClient.v4;
-
+console.log('rice')
 app.set('port', 3005);
 
 passportConfig();
