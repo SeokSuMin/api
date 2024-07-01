@@ -22,6 +22,7 @@ const RedisStore = connectRedis(expressSession);
 dotenv.config();
 
 console.log('11')
+console.log('22')
 
 const app = express();
 const prod: boolean = process.env.NODE_ENV === 'production';
