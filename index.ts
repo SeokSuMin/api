@@ -23,6 +23,7 @@ dotenv.config();
 
 console.log('1')
 console.log('2')
+console.log('3')
 
 const app = express();
 const prod: boolean = process.env.NODE_ENV === 'production';
