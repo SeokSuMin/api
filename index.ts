@@ -22,11 +22,12 @@ const RedisStore = connectRedis(expressSession);
 dotenv.config();
 
 console.log('1')
-console.log('2')
-console.log('3')
 
 const app = express();
 const prod: boolean = process.env.NODE_ENV === 'production';
+
+
+console.log('안녕하세요')
 
 // const redisClient = redis.createClient({
 //     url: `redis://${process.env.REDIS_USERNAME}:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}/0`,
